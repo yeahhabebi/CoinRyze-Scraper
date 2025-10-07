@@ -76,25 +76,22 @@ class CoinRyzeScraper:
         # Example selectors - you need to inspect actual site
         crypto_data = []
         
-        # Hypothetical card structure
-        crypto_cards = soup.select('.crypto-card')  # Update with actual selector
+        # Hypothetical card structure - UPDATE THESE SELECTORS
+        crypto_cards = soup.find_all('div', class_='crypto-item')  # Update with actual selector
         
         for card in crypto_cards:
             try:
                 # Extract data - update selectors based on actual site inspection
-                name = card.select_one('.crypto-name').get_text(strip=True)
-                symbol = card.select_one('.crypto-symbol').get_text(strip=True)
-                price = card.select_one('.crypto-price').get_text(strip=True)
-                change = card.select_one('.price-change').get_text(strip=True)
+                name_elem = card.find('h3') or card.find('span', class_='name')
+                price_elem = card.find('span', class_='price') or card.find('div', class_='value')
                 
-                crypto_data.append({
-                    'name': name,
-                    'symbol': symbol,
-                    'price': price,
-                    '24h_change': change,
-                    'timestamp': datetime.now().isoformat()
-                })
-            except AttributeError as e:
+                if name_elem and price_elem:
+                    crypto_data.append({
+                        'name': name_elem.get_text(strip=True),
+                        'price': price_elem.get_text(strip=True),
+                        'timestamp': datetime.now().isoformat()
+                    })
+            except Exception as e:
                 print(f"Error extracting data: {e}")
                 continue
         
@@ -102,15 +99,21 @@ class CoinRyzeScraper:
 
     def save_to_csv(self, data, filename):
         """Save data to CSV file"""
-        df = pd.DataFrame(data)
-        df.to_csv(filename, index=False)
-        print(f"Data saved to {filename}")
+        if data:
+            df = pd.DataFrame(data)
+            df.to_csv(filename, index=False)
+            print(f"Data saved to {filename}")
+        else:
+            print("No data to save")
 
     def save_to_json(self, data, filename):
         """Save data to JSON file"""
-        with open(filename, 'w') as f:
-            json.dump(data, f, indent=2)
-        print(f"Data saved to {filename}")
+        if data:
+            with open(filename, 'w') as f:
+                json.dump(data, f, indent=2)
+            print(f"Data saved to {filename}")
+        else:
+            print("No data to save")
 
     def print_stats(self):
         """Print scraping statistics"""
@@ -123,6 +126,7 @@ class CoinRyzeScraper:
 
 def main():
     print("Starting CoinRyze.org educational scraper...")
+    print("NOTE: This is a template. You need to inspect the actual website structure.")
     
     scraper = CoinRyzeScraper()
     
@@ -144,9 +148,10 @@ def main():
         # Display first few results
         print("\nFirst 3 results:")
         for i, crypto in enumerate(crypto_data[:3]):
-            print(f"{i+1}. {crypto['name']} ({crypto['symbol']}): {crypto['price']}")
+            print(f"{i+1}. {crypto['name']}: {crypto['price']}")
     else:
         print("No data scraped. The site structure may have changed.")
+        print("You need to inspect the actual website and update the CSS selectors.")
     
     # Print statistics
     scraper.print_stats()
